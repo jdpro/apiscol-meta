@@ -1,0 +1,2 @@
+joachim@DORNBUSCH-PC:/home/meta$ curl "http://localhost:8080/solr/apiscol-metadata/update?commit=true&tr=scolomfr_import.xsl" -H "Content-Type: text/xml; charset=utf-8" --data-binary @1234-5678-9012.xml
+
