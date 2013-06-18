@@ -1,6 +1,15 @@
 *.class
-
-# Package Files #
 *.jar
 *.war
 *.ear
+.project
+.metadata
+bin/**
+tmp/**
+tmp/**/*
+*.tmp
+*.bak
+*.swp
+.classpath
+.settings/
+*.launch
