@@ -361,6 +361,10 @@ public class ResourceDirectoryInterface {
 					generalElement, "description", lomNs);
 			Element descriptionElement = getOrCreateChild(
 					descriptionContainerElement, "string", lomNs);
+			Element coverageContainerElement = getOrCreateChild(generalElement,
+					"coverage", lomNs);
+			Element coverageElement = getOrCreateChild(
+					coverageContainerElement, "string", lomNs);
 			Element technicalElement = getOrCreateChild(rootNode, "technical",
 					lomNs);
 			Element locationElement = getOrCreateChild(technicalElement,
@@ -370,6 +374,7 @@ public class ResourceDirectoryInterface {
 			sizeElem.setText("0");
 			setLanguageToDefaultIfNotSpecified(descriptionElement);
 			cleanString(descriptionElement);
+			cleanString(coverageElement);
 			// TODO clean other free text elements
 			XMLOutputter xmlOutput = new XMLOutputter();
 			xmlOutput.setFormat(Format.getPrettyFormat());
@@ -596,7 +601,8 @@ public class ResourceDirectoryInterface {
 					Element value = kind.getChild("value", lomNs);
 					if (value == null)
 						continue;
-					if (value.getText().contains(RelationKinds.APERCU.toString()))
+					if (value.getText().contains(
+							RelationKinds.APERCU.toString()))
 						previewRelation = relation;
 
 				}
@@ -773,11 +779,12 @@ public class ResourceDirectoryInterface {
 		Element relCatalogElement = getOrCreateChild(relIdentifierElement,
 				"catalog", lomNs);
 		relCatalogElement.setText("URI");
-		Element relEntryElement = getOrCreateChild(relIdentifierElement, "entry",
-				lomNs);
+		Element relEntryElement = getOrCreateChild(relIdentifierElement,
+				"entry", lomNs);
 		relEntryElement.setText(uri.toString());
 
 	}
+
 	private static Element createNewRelation(Element rootNode) {
 		Element previewRelation = new Element("relation");
 		previewRelation.setNamespace(lomNs);
@@ -848,7 +855,7 @@ public class ResourceDirectoryInterface {
 		Document packXMLDoc = null;
 		try {
 			packXMLDoc = (Document) builder.build(packFile);
-			
+
 			actualRelations = getRelations(RelationKinds.CONTIENT, packXMLDoc,
 					null);
 			for (Iterator<Element> iterator = actualRelations.iterator(); iterator
@@ -863,14 +870,14 @@ public class ResourceDirectoryInterface {
 				XMLOutputter xmlOutput = new XMLOutputter();
 				xmlOutput.setFormat(Format.getPrettyFormat());
 				xmlOutput.output(partXMLDoc, new FileWriter(partFile));
-			
+
 			}
 			deleteRelation(RelationKinds.CONTIENT, packXMLDoc, null);
 		} catch (Exception e) {
-			logger.error("It seems impossible to parse file : "+packFile);
+			logger.error("It seems impossible to parse file : " + packFile);
 			e.printStackTrace();
 		}
-		
+
 		return otherAffectedMetadataIds;
 	}
 
