@@ -13,4 +13,4 @@ tmp/**/*
 .classpath
 .settings/
 *.launch
-/build
+/build/*
