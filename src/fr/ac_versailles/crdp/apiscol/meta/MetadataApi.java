@@ -89,12 +89,12 @@ public class MetadataApi extends ApiscolApi {
 	}
 
 	public static void initializeResourceDirectoryInterface(
-			ServletContext context) {  
+			ServletContext context) {
 		if (!ResourceDirectoryInterface.isInitialized())
 			ResourceDirectoryInterface.initialize(
 					getProperty(ParametersKeys.fileRepoPath, context),
 					getProperty(ParametersKeys.systemDefaultLanguage, context),
-					context.getRealPath("scolomfr-xsd-1-1bis/scolomfr.xsd"), 
+					context.getRealPath("scolomfr-xsd-1-1bis/scolomfr.xsd"),
 					getProperty(ParametersKeys.temporaryFilesPrefix, context));
 	}
 
@@ -198,7 +198,7 @@ public class MetadataApi extends ApiscolApi {
 	 * @throws MetadataNotFoundException
 	 */
 	@POST
-	@Path("/")  
+	@Path("/")
 	@Produces({ MediaType.APPLICATION_ATOM_XML, MediaType.APPLICATION_XML })
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
 	public Response createMetadata(

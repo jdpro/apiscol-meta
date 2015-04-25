@@ -196,7 +196,7 @@ public class ResourceDirectoryInterface {
 		try {
 			FileUtils.writeStreamToFile(uploadedInputStream, newXMLFile);
 		} catch (IOException e) {
-			// TODO mapper l'exception
+			logger.error(e.getMessage());
 			e.printStackTrace();
 		}
 		validateFile(newXMLFile);
@@ -288,8 +288,13 @@ public class ResourceDirectoryInterface {
 	}
 
 	public static boolean commitTemporaryMetadataFile(String metadataId) {
-		File temporary = new File(getFilePath(metadataId, true));
-		File definitive = new File(getFilePath(metadataId, false));
+
+		String tempFilePath = getFilePath(metadataId, true);
+		String definitiveFilePath = getFilePath(metadataId, false);
+		logger.error(String.format("Trying to copy file from %s to %s",
+				tempFilePath, definitiveFilePath));
+		File temporary = new File(tempFilePath);
+		File definitive = new File(definitiveFilePath);
 		definitive.getParentFile().mkdirs();
 		if (!temporary.exists()) {
 			logger.error(String
@@ -297,7 +302,16 @@ public class ResourceDirectoryInterface {
 							temporary.getAbsolutePath(), metadataId));
 			return false;
 		}
-		return temporary.renameTo(definitive);
+		try {
+			//FIXIT lors de la migration sous windows
+			//impossible de faire tourner rename
+			FileUtils.copyFile(temporary, definitive);
+			return true;
+		} catch (Exception e) {
+			logger.error(e.getMessage());
+			return false;
+		}
+
 	}
 
 	public static boolean commitTemporaryJsonMetadataFile(String metadataId) {
