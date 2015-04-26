@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.RandomAccessFile;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -175,14 +176,36 @@ public class ResourceDirectoryInterface {
 	}
 
 	private static void writeStringToFile(String string, File file) {
-		BufferedWriter out;
+		BufferedWriter out = null;
+		FileWriter fileWriter = null;
 		try {
-			out = new BufferedWriter(new FileWriter(file));
+			fileWriter = new FileWriter(file);
+			out = new BufferedWriter(fileWriter);
 			out.write(string);
-			out.close();
+			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		} finally {
+			if(out!=null) {
+				try {
+					out.flush();
+					out.close();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+			}
+			if(fileWriter!=null) {
+				try {
+					fileWriter.close();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			
 		}
 
 	}
@@ -294,24 +317,44 @@ public class ResourceDirectoryInterface {
 		logger.error(String.format("Trying to copy file from %s to %s",
 				tempFilePath, definitiveFilePath));
 		File temporary = new File(tempFilePath);
-		File definitive = new File(definitiveFilePath);
-		definitive.getParentFile().mkdirs();
 		if (!temporary.exists()) {
 			logger.error(String
 					.format("Trying to commit temporary file %s for metadata %s but the file does not exist",
 							temporary.getAbsolutePath(), metadataId));
 			return false;
 		}
+		File definitive = new File(definitiveFilePath);
+		definitive.getParentFile().mkdirs();
 		try {
-			//FIXIT lors de la migration sous windows
-			//impossible de faire tourner rename
-			FileUtils.copyFile(temporary, definitive);
-			return true;
-		} catch (Exception e) {
-			logger.error(e.getMessage());
+			org.apache.commons.io.FileUtils.copyFile(temporary, definitive);
+		} catch (IOException e) {
+			logger.error(String
+					.format("Trying to copy temporary file %s for metadata %s but a problem occured, message : %s",
+							temporary.getAbsolutePath(), metadataId,
+							e.getMessage()));
 			return false;
 		}
+		boolean deleteSuccessfull = org.apache.commons.io.FileUtils
+				.deleteQuietly(temporary);
+		if (!deleteSuccessfull) {
+			logger.warn(String
+					.format("First attempt : impossible to delete temporary file %s for metadata %s",
+							temporary.getAbsolutePath(), metadataId));
+			try {
+				Thread.sleep(500);
+			} catch (InterruptedException e) {
+				return true;
+			}
+			deleteSuccessfull = org.apache.commons.io.FileUtils
+					.deleteQuietly(temporary);
+			if (!deleteSuccessfull)
+				logger.warn(String
+						.format("Second attempt : impossible to delete temporary file %s for metadata %s",
+								temporary.getAbsolutePath(), metadataId));
 
+		}
+
+		return true;
 	}
 
 	public static boolean commitTemporaryJsonMetadataFile(String metadataId) {
@@ -324,7 +367,36 @@ public class ResourceDirectoryInterface {
 							temporary.getAbsolutePath(), metadataId));
 			return false;
 		}
-		return temporary.renameTo(definitive);
+		try {
+			org.apache.commons.io.FileUtils.copyFile(temporary, definitive);
+		} catch (IOException e) {
+			logger.error(String
+					.format("Trying to copy temporary json file %s for metadata %s but a problem occured, message : %s",
+							temporary.getAbsolutePath(), metadataId,
+							e.getMessage()));
+			return false;
+		}
+		boolean deleteSuccessfull = org.apache.commons.io.FileUtils
+				.deleteQuietly(temporary);
+		if (!deleteSuccessfull) {
+			logger.warn(String
+					.format("First attempt : impossible to delete temporary json file %s for metadata %s",
+							temporary.getAbsolutePath(), metadataId));
+			try {
+				Thread.sleep(500);
+			} catch (InterruptedException e) {
+				return true;
+			}
+			deleteSuccessfull = org.apache.commons.io.FileUtils
+					.deleteQuietly(temporary);
+			if (!deleteSuccessfull)
+				logger.warn(String
+						.format("Second attempt : impossible to delete temporary json file %s for metadata %s",
+								temporary.getAbsolutePath(), metadataId));
+
+		}
+
+		return true;
 	}
 
 	private static void validateFile(File scolomFrXml)
@@ -350,7 +422,7 @@ public class ResourceDirectoryInterface {
 	private static void updateMetadata(File xmlFile, String url,
 			String apiscolInstanceName) throws FileSystemAccessException,
 			InvalidProvidedMetadataFileException {
-
+		FileWriter out = null;
 		try {
 
 			SAXBuilder builder = new SAXBuilder();
@@ -392,7 +464,9 @@ public class ResourceDirectoryInterface {
 			// TODO clean other free text elements
 			XMLOutputter xmlOutput = new XMLOutputter();
 			xmlOutput.setFormat(Format.getPrettyFormat());
-			xmlOutput.output(doc, new FileWriter(xmlFile));
+			out = new FileWriter(xmlFile);
+			xmlOutput.output(doc, out);
+
 		} catch (IOException io) {
 			throw new FileSystemAccessException(
 					String.format(
@@ -403,6 +477,17 @@ public class ResourceDirectoryInterface {
 					String.format(
 							"Impossible to read the xml file when trying to write url : %s, xml syntax problem",
 							url));
+		} finally {
+			if (out != null) {
+				try {
+					out.flush();
+					out.close();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+			}
 		}
 
 	}
@@ -513,7 +598,7 @@ public class ResourceDirectoryInterface {
 			success &= metadataFile.delete();
 			if (jsonpMetadataFile != null && jsonpMetadataFile.exists())
 				success &= jsonpMetadataFile.delete();
-			if (success && parent.list().length == 0) {
+			if (!temporary && success && parent.list().length == 0) {
 				success &= FileUtils.deleteDir(parent);
 				if (success && grandParent.list().length == 0) {
 					success &= FileUtils.deleteDir(grandParent);
@@ -544,7 +629,9 @@ public class ResourceDirectoryInterface {
 			String apiscolInstance, String location, String format,
 			String thumb, String preview) throws FileSystemAccessException,
 			MetadataNotFoundException {
+		FileWriter out = null;
 		try {
+
 			SAXBuilder builder = new SAXBuilder();
 			File xmlFile = getMetadataFile(metadataId);
 			Document doc = (Document) builder.build(xmlFile);
@@ -639,7 +726,8 @@ public class ResourceDirectoryInterface {
 
 			XMLOutputter xmlOutput = new XMLOutputter();
 			xmlOutput.setFormat(Format.getPrettyFormat());
-			xmlOutput.output(doc, new FileWriter(xmlFile));
+			out = new FileWriter(xmlFile);
+			xmlOutput.output(doc, out);
 		} catch (IOException io) {
 			throw new FileSystemAccessException(
 					String.format(
@@ -649,6 +737,17 @@ public class ResourceDirectoryInterface {
 			logger.error(String
 					.format("Impossible to read the xml file when trying for metadata %s,xml syntax problem",
 							metadataId));
+		} finally {
+			if (out != null) {
+				try {
+					out.flush();
+					out.close();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+			}
 		}
 
 	}
@@ -685,6 +784,7 @@ public class ResourceDirectoryInterface {
 		List<String> otherAffectedMetadataIds = removePackRelations(
 				packMetadataId, uriInfo);
 		Document packXMLDoc = null;
+		FileWriter out = null;
 		try {
 			packXMLDoc = (Document) builder.build(packFile);
 
@@ -705,7 +805,8 @@ public class ResourceDirectoryInterface {
 			setLomIdentifier(packXMLDoc.getRootElement(), "APISCOL", packId);
 			XMLOutputter xmlOutput = new XMLOutputter();
 			xmlOutput.setFormat(Format.getPrettyFormat());
-			xmlOutput.output(packXMLDoc, new FileWriter(packFile));
+			out = new FileWriter(packFile);
+			xmlOutput.output(packXMLDoc, out);
 		} catch (MetadataNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -715,6 +816,17 @@ public class ResourceDirectoryInterface {
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		} finally {
+			if (out != null) {
+				try {
+					out.flush();
+					out.close();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+			}
 		}
 
 		return otherAffectedMetadataIds;
@@ -809,6 +921,7 @@ public class ResourceDirectoryInterface {
 	public static void setAggregationLevel(String metadataId, int level)
 			throws MetadataNotFoundException {
 		File xmlFile = getMetadataFile(metadataId);
+		FileWriter out = null;
 		SAXBuilder builder = new SAXBuilder();
 		Document doc = null;
 		try {
@@ -830,10 +943,22 @@ public class ResourceDirectoryInterface {
 		XMLOutputter xmlOutput = new XMLOutputter();
 		xmlOutput.setFormat(Format.getPrettyFormat());
 		try {
-			xmlOutput.output(doc, new FileWriter(xmlFile));
+			out = new FileWriter(xmlFile);
+			xmlOutput.output(doc, out);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		} finally {
+			if (out != null) {
+				try {
+					out.flush();
+					out.close();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+			}
 		}
 	}
 
