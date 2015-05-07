@@ -1010,12 +1010,13 @@ public class MetadataApi extends ApiscolApi {
 				e.printStackTrace();
 			}
 		}
-		return Response.ok(
-				rb.selectMetadataFollowingCriterium(context.getRealPath(""),
-						uriInfo, apiscolInstanceName, apiscolInstanceLabel,
-						handler, start, rows, includeDescription,
-						resourceDataHandler, editUri, version),
-				rb.getMediaType()).build();
+		return Response
+				.ok(rb.selectMetadataFollowingCriterium(
+						context.getRealPath(""), uriInfo, apiscolInstanceName,
+						apiscolInstanceLabel, handler, start, rows,
+						includeDescription, resourceDataHandler, editUri,
+						version), rb.getMediaType())
+				.header("Access-Control-Allow-Origin", "*").build();
 
 	}
 
