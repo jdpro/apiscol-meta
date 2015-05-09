@@ -223,22 +223,14 @@ public class MetadataApi extends ApiscolApi {
 			ResourceDirectoryInterface.registerMetadataFile(metadataId,
 					uploadedInputStream, url, apiscolInstanceName);
 		} catch (FileSystemAccessException e) {
-			try {
-				ResourceDirectoryInterface.deleteMetadataFile(metadataId, true);
-			} catch (MetadataNotFoundException e1) {
-				logger.error(String
-						.format("Registration of file was aborted as a transfer problem occured for metadata %s, but it was impossible to delete the file",
-								metadataId));
-			}
+			logger.error(String
+					.format("Registration of file was aborted as a transfer problem occured for metadata %s",
+							metadataId));
 			throw e;
 		} catch (InvalidProvidedMetadataFileException e) {
-			try {
-				ResourceDirectoryInterface.deleteMetadataFile(metadataId, true);
-			} catch (MetadataNotFoundException e1) {
-				logger.error(String
-						.format("Registration of file was aborted as a transfer problem occured for metadata %s, but it was impossible to delete the file",
-								metadataId));
-			}
+			logger.error(String
+					.format("Registration of file was aborted as a transfer problem occured for metadata %s",
+							metadataId));
 			throw e;
 		}
 		try {
@@ -255,15 +247,6 @@ public class MetadataApi extends ApiscolApi {
 							metadataId);
 			logger.error(error1);
 			errors.append(error1);
-			try {
-				ResourceDirectoryInterface.deleteMetadataFile(metadataId, true);
-			} catch (MetadataNotFoundException e1) {
-				String error2 = String
-						.format("The temporary file for metadata %s was note deleted for an unknown reason.",
-								metadataId);
-				logger.error(error2);
-				errors.append(error2);
-			}
 
 			throw new FileSystemAccessException(errors.toString());
 		}
@@ -283,8 +266,7 @@ public class MetadataApi extends ApiscolApi {
 		} catch (SearchEngineCommunicationException e1) {
 			e1.printStackTrace();
 			try {
-				ResourceDirectoryInterface
-						.deleteMetadataFile(metadataId, false);
+				ResourceDirectoryInterface.deleteMetadataFile(metadataId);
 			} catch (MetadataNotFoundException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -294,8 +276,7 @@ public class MetadataApi extends ApiscolApi {
 		} catch (SearchEngineErrorException e1) {
 			e1.printStackTrace();
 			try {
-				ResourceDirectoryInterface
-						.deleteMetadataFile(metadataId, false);
+				ResourceDirectoryInterface.deleteMetadataFile(metadataId);
 			} catch (MetadataNotFoundException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -465,24 +446,17 @@ public class MetadataApi extends ApiscolApi {
 					ResourceDirectoryInterface.registerMetadataFile(metadataId,
 							uploadedInputStream, url, apiscolInstanceName);
 				} catch (FileSystemAccessException e) {
-					try {
-						ResourceDirectoryInterface.deleteMetadataFile(
-								metadataId, true);
-					} catch (MetadataNotFoundException e1) {
-						logger.error(String
-								.format("Registration of file was aborted as a transfer problem occured for metadata %s, but it was impossible to delete the file",
-										metadataId));
-					}
+					logger.error(String
+							.format("Registration of file was aborted as a transfer problem occured for metadata %s",
+									metadataId));
+
 					throw e;
 				} catch (InvalidProvidedMetadataFileException e) {
-					try {
-						ResourceDirectoryInterface.deleteMetadataFile(
-								metadataId, true);
-					} catch (MetadataNotFoundException e1) {
-						logger.error(String
-								.format("Registration of file was aborted as a transfer problem occured for metadata %s, but it was impossible to delete the file",
-										metadataId));
-					}
+
+					logger.error(String
+							.format("Registration of file was aborted as a transfer problem occured for metadata %s",
+									metadataId));
+
 					throw e;
 				}
 				try {
@@ -495,7 +469,7 @@ public class MetadataApi extends ApiscolApi {
 				Map<String, String> propertiesToSave = ResourceDirectoryInterface
 						.extractPropertiesToSave(metadataId);
 				boolean successFullFileDeletion = ResourceDirectoryInterface
-						.deleteMetadataFile(metadataId, false);
+						.deleteMetadataFile(metadataId);
 
 				if (!successFullFileDeletion) {
 					// we don't stop, perhaps previous metadata file did not
@@ -529,8 +503,7 @@ public class MetadataApi extends ApiscolApi {
 					warnings.append(errorReport);
 					logger.error(errorReport);
 					// delete the temporary file
-					ResourceDirectoryInterface.deleteMetadataFile(metadataId,
-							true);
+					ResourceDirectoryInterface.deleteMetadataFile(metadataId);
 					throw new FileSystemAccessException(errorReport);
 				}
 				ResourceDirectoryInterface.restoreProperties(metadataId,
@@ -1227,7 +1200,7 @@ public class MetadataApi extends ApiscolApi {
 				}
 				String url = rb.getMetadataUri(uriInfo, metadataId);
 				boolean successFullFileDeletion = ResourceDirectoryInterface
-						.deleteMetadataFile(metadataId, false);
+						.deleteMetadataFile(metadataId);
 				if (successFullFileDeletion) {
 					try {
 						searchEngineQueryHandler.processDeleteQuery(url);

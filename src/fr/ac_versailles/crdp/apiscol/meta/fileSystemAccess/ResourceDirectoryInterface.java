@@ -7,7 +7,6 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.RandomAccessFile;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -62,6 +61,8 @@ public class ResourceDirectoryInterface {
 
 	private static String tabulationsPattern = "\\t+";
 
+	private static HashMap<String, File> temporaryFiles;
+
 	public static void initialize(String fileRepoPath, String defaultLanguage,
 			String xsdPath, String temporaryFilesPrefix) {
 		ResourceDirectoryInterface.fileRepoPath = fileRepoPath;
@@ -69,6 +70,35 @@ public class ResourceDirectoryInterface {
 		ResourceDirectoryInterface.temporaryFilesPrefix = temporaryFilesPrefix;
 		initializeLogger();
 		createValidator(xsdPath);
+
+	}
+
+	private static File getOrCreateTemporaryFile(String id, String ext)
+			throws IOException {
+		if (temporaryFiles == null)
+			temporaryFiles = new HashMap<String, File>();
+		String identifier = getTemporaryFileHashMapIdentifier(id, ext);
+		if (!temporaryFiles.containsKey(identifier)) {
+			temporaryFiles.put(identifier, File.createTempFile(id, ext));
+		}
+		return temporaryFiles.get(identifier);
+	}
+
+	private static File getTemporaryFile(String id, String ext) {
+		if (temporaryFiles == null)
+			temporaryFiles = new HashMap<String, File>();
+		String identifier = getTemporaryFileHashMapIdentifier(id, ext);
+		if (!temporaryFiles.containsKey(identifier)) {
+			return null;
+		}
+		return temporaryFiles.get(identifier);
+	}
+
+	private static String getTemporaryFileHashMapIdentifier(String id,
+			String ext) {
+
+		return new StringBuilder().append(id).append('-').append(ext)
+				.toString();
 	}
 
 	private static void createValidator(String xsdPath) {
@@ -102,9 +132,9 @@ public class ResourceDirectoryInterface {
 		getMetadataFile(metadataId);
 	}
 
-	private static File getMetadataFile(String metadataId, boolean temporary)
+	public static File getMetadataFile(String metadataId)
 			throws MetadataNotFoundException {
-		File file = new File(getFilePath(metadataId, temporary));
+		File file = new File(getFilePath(metadataId));
 		if (!file.exists() || !file.isFile()) {
 			logger.warn(String.format(
 					"File not found for metadataId %s with path %s",
@@ -112,11 +142,6 @@ public class ResourceDirectoryInterface {
 			throw new MetadataNotFoundException(metadataId);
 		}
 		return file;
-	}
-
-	public static File getMetadataFile(String metadataId)
-			throws MetadataNotFoundException {
-		return getMetadataFile(metadataId, false);
 	}
 
 	public static String getTimeStamp(String metadataId)
@@ -182,12 +207,12 @@ public class ResourceDirectoryInterface {
 			fileWriter = new FileWriter(file);
 			out = new BufferedWriter(fileWriter);
 			out.write(string);
-			
+
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} finally {
-			if(out!=null) {
+			if (out != null) {
 				try {
 					out.flush();
 					out.close();
@@ -195,9 +220,9 @@ public class ResourceDirectoryInterface {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-				
+
 			}
-			if(fileWriter!=null) {
+			if (fileWriter != null) {
 				try {
 					fileWriter.close();
 				} catch (IOException e) {
@@ -205,7 +230,7 @@ public class ResourceDirectoryInterface {
 					e.printStackTrace();
 				}
 			}
-			
+
 		}
 
 	}
@@ -215,49 +240,27 @@ public class ResourceDirectoryInterface {
 			String apiscolInstanceName) throws FileSystemAccessException,
 			InvalidProvidedMetadataFileException {
 		File newXMLFile = null;
-		newXMLFile = new File(getFilePath(metadataId, true));
 		try {
+			newXMLFile = getOrCreateTemporaryFile(metadataId, "xml");
 			FileUtils.writeStreamToFile(uploadedInputStream, newXMLFile);
-		} catch (IOException e) {
-			logger.error(e.getMessage());
-			e.printStackTrace();
+			validateFile(newXMLFile);
+			updateMetadata(newXMLFile, url, apiscolInstanceName);
+			serializeIntoJSon(newXMLFile, metadataId);
+		} catch (IOException e1) {
+			// TODO relancer une exception
+			logger.error(e1.getMessage());
+			e1.printStackTrace();
 		}
-		validateFile(newXMLFile);
-		updateMetadata(newXMLFile, url, apiscolInstanceName);
-		serializeIntoJSon(newXMLFile, metadataId);
+
 	}
 
 	public static void renewJsonpFile(String metadataId) {
-		File XMLFile = new File(getFilePath(metadataId, false));
-		File actualJsonpFile = new File(getFilePath(metadataId, false, "js"));
+		File XMLFile = new File(getFilePath(metadataId));
+		File actualJsonpFile = new File(getFilePath(metadataId, "js"));
 		if (actualJsonpFile.exists())
 			actualJsonpFile.delete();
 		serializeIntoJSon(XMLFile, metadataId);
 		commitTemporaryJsonMetadataFile(metadataId);
-	}
-
-	private static void convertToJSon(File xmlFile, String metadataId) {
-		FileInputStream fis = null;
-		try {
-			fis = new FileInputStream(xmlFile);
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		String xml = null;
-		try {
-			xml = IOUtils.toString(fis);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		XMLSerializer xmlSerializer = new XMLSerializer();
-		JSON json = xmlSerializer.read(xml);
-		File file = new File(getFilePath(metadataId, true, "js"));
-		writeStringToFile(
-				new StringBuilder().append("notice(").append(json.toString())
-						.append(");").toString(), file);
-
 	}
 
 	private static void serializeIntoJSon(File xmlFile, String metadataId) {
@@ -277,52 +280,49 @@ public class ResourceDirectoryInterface {
 		}
 		XMLSerializer xmlSerializer = new XMLSerializer();
 		JSON json = xmlSerializer.read(xml);
-		File file = new File(getFilePath(metadataId, true, "js"));
+		File file = null;
+		try {
+			file = getOrCreateTemporaryFile(metadataId, "js");
+		} catch (IOException e) {
+			logger.error(e.getMessage());
+			e.printStackTrace();
+		}
+		String jsonStr = json.toString();
 		writeStringToFile(
 				new StringBuilder()
 						.append("notice(\"")
-						.append(xml.replaceAll("[\n\r]", " ").replace("\"",
+						.append(jsonStr.replaceAll("[\n\r]", " ").replace("\"",
 								"\\\"")).append("\");").toString(), file);
 
 	}
 
-	public static String getFilePath(String metadataId, boolean temporary,
-			String extension) {
+	public static String getFilePath(String metadataId, String extension) {
 		StringBuilder builder = new StringBuilder();
-		if (temporary) {
 
-			builder = builder.append(fileRepoPath).append("/")
-					.append(temporaryFilesPrefix).append(metadataId)
-					.append(".").append(extension);
-		} else {
-			builder = builder
-					.append(FileUtils.getFilePathHierarchy(fileRepoPath,
-							metadataId)).append(".").append(extension);
-		}
+		builder = builder
+				.append(FileUtils
+						.getFilePathHierarchy(fileRepoPath, metadataId))
+				.append(".").append(extension);
+
 		return builder.toString();
 	}
 
-	public static String getFilePath(String metadataId, boolean temporary) {
-		return getFilePath(metadataId, temporary, "xml");
-	}
-
 	public static String getFilePath(String metadataId) {
-		return getFilePath(metadataId, false);
+		return getFilePath(metadataId, "xml");
 	}
 
 	public static boolean commitTemporaryMetadataFile(String metadataId) {
 
-		String tempFilePath = getFilePath(metadataId, true);
-		String definitiveFilePath = getFilePath(metadataId, false);
-		logger.error(String.format("Trying to copy file from %s to %s",
-				tempFilePath, definitiveFilePath));
-		File temporary = new File(tempFilePath);
-		if (!temporary.exists()) {
+		String definitiveFilePath = getFilePath(metadataId);
+		File temporary;
+		temporary = getTemporaryFile(metadataId, "xml");
+		if (temporary == null || !temporary.exists()) {
 			logger.error(String
-					.format("Trying to commit temporary file %s for metadata %s but the file does not exist",
-							temporary.getAbsolutePath(), metadataId));
+					.format("Trying to commit temporary file for metadata %s but the temporary file does not exist or is not readable",
+							metadataId));
 			return false;
 		}
+
 		File definitive = new File(definitiveFilePath);
 		definitive.getParentFile().mkdirs();
 		try {
@@ -334,32 +334,13 @@ public class ResourceDirectoryInterface {
 							e.getMessage()));
 			return false;
 		}
-		boolean deleteSuccessfull = org.apache.commons.io.FileUtils
-				.deleteQuietly(temporary);
-		if (!deleteSuccessfull) {
-			logger.warn(String
-					.format("First attempt : impossible to delete temporary file %s for metadata %s",
-							temporary.getAbsolutePath(), metadataId));
-			try {
-				Thread.sleep(500);
-			} catch (InterruptedException e) {
-				return true;
-			}
-			deleteSuccessfull = org.apache.commons.io.FileUtils
-					.deleteQuietly(temporary);
-			if (!deleteSuccessfull)
-				logger.warn(String
-						.format("Second attempt : impossible to delete temporary file %s for metadata %s",
-								temporary.getAbsolutePath(), metadataId));
-
-		}
 
 		return true;
 	}
 
 	public static boolean commitTemporaryJsonMetadataFile(String metadataId) {
-		File temporary = new File(getFilePath(metadataId, true, "js"));
-		File definitive = new File(getFilePath(metadataId, false, "js"));
+		File temporary = getTemporaryFile(metadataId, "js");
+		File definitive = new File(getFilePath(metadataId, "js"));
 		definitive.getParentFile().mkdirs();
 		if (!temporary.exists()) {
 			logger.error(String
@@ -375,25 +356,6 @@ public class ResourceDirectoryInterface {
 							temporary.getAbsolutePath(), metadataId,
 							e.getMessage()));
 			return false;
-		}
-		boolean deleteSuccessfull = org.apache.commons.io.FileUtils
-				.deleteQuietly(temporary);
-		if (!deleteSuccessfull) {
-			logger.warn(String
-					.format("First attempt : impossible to delete temporary json file %s for metadata %s",
-							temporary.getAbsolutePath(), metadataId));
-			try {
-				Thread.sleep(500);
-			} catch (InterruptedException e) {
-				return true;
-			}
-			deleteSuccessfull = org.apache.commons.io.FileUtils
-					.deleteQuietly(temporary);
-			if (!deleteSuccessfull)
-				logger.warn(String
-						.format("Second attempt : impossible to delete temporary json file %s for metadata %s",
-								temporary.getAbsolutePath(), metadataId));
-
 		}
 
 		return true;
@@ -585,11 +547,10 @@ public class ResourceDirectoryInterface {
 		return e;
 	}
 
-	public static boolean deleteMetadataFile(String metadataId,
-			boolean temporary) throws MetadataNotFoundException {
-		File metadataFile = new File(getFilePath(metadataId, temporary));
-		File jsonpMetadataFile = new File(getFilePath(metadataId, temporary,
-				"js"));
+	public static boolean deleteMetadataFile(String metadataId)
+			throws MetadataNotFoundException {
+		File metadataFile = new File(getFilePath(metadataId));
+		File jsonpMetadataFile = new File(getFilePath(metadataId, "js"));
 		File parent = metadataFile.getParentFile();
 		File grandParent = parent.getParentFile();
 		File grandGrandParent = grandParent.getParentFile();
@@ -598,7 +559,7 @@ public class ResourceDirectoryInterface {
 			success &= metadataFile.delete();
 			if (jsonpMetadataFile != null && jsonpMetadataFile.exists())
 				success &= jsonpMetadataFile.delete();
-			if (!temporary && success && parent.list().length == 0) {
+			if (success && parent.list().length == 0) {
 				success &= FileUtils.deleteDir(parent);
 				if (success && grandParent.list().length == 0) {
 					success &= FileUtils.deleteDir(grandParent);
