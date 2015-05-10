@@ -278,8 +278,6 @@ public class ResourceDirectoryInterface {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		XMLSerializer xmlSerializer = new XMLSerializer();
-		JSON json = xmlSerializer.read(xml);
 		File file = null;
 		try {
 			file = getOrCreateTemporaryFile(metadataId, "js");
@@ -287,11 +285,10 @@ public class ResourceDirectoryInterface {
 			logger.error(e.getMessage());
 			e.printStackTrace();
 		}
-		String jsonStr = json.toString();
 		writeStringToFile(
 				new StringBuilder()
 						.append("notice(\"")
-						.append(jsonStr.replaceAll("[\n\r]", " ").replace("\"",
+						.append(xml.replaceAll("[\n\r]", " ").replace("\"",
 								"\\\"")).append("\");").toString(), file);
 
 	}
