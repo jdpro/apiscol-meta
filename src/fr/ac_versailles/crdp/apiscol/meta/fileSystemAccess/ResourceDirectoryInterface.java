@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -41,6 +42,7 @@ import org.xml.sax.SAXException;
 import fr.ac_versailles.crdp.apiscol.UsedNamespaces;
 import fr.ac_versailles.crdp.apiscol.meta.references.RelationKinds;
 import fr.ac_versailles.crdp.apiscol.meta.references.Source;
+import fr.ac_versailles.crdp.apiscol.meta.resources.ResourcesLoader;
 import fr.ac_versailles.crdp.apiscol.utils.FileUtils;
 import fr.ac_versailles.crdp.apiscol.utils.LogUtility;
 
@@ -104,16 +106,23 @@ public class ResourceDirectoryInterface {
 	private static void createValidator(String xsdPath) {
 		SchemaFactory factory = SchemaFactory
 				.newInstance("http://www.w3.org/2001/XMLSchema");
-		File schemaLocation = new File(xsdPath);
+		logger.info("Tentative de chargement des xsd depuis " + xsdPath);
+		InputStream schemaStream = ResourcesLoader.loadResource(xsdPath);
+
+		if (schemaStream == null) {
+			logger.error("Impossible de trouver les fichiers xsd en " + xsdPath);
+			return;
+		}
 		Schema schema = null;
 		try {
-			schema = factory.newSchema(schemaLocation);
+			schema = factory.newSchema(new StreamSource(schemaStream));
+			validator = schema.newValidator();
 		} catch (SAXException e1) {
-			logger.error("The scolomfr xsd files seems to be corrupted");
+			logger.error("The scolomfr xsd files seems to be corrupted or not available on "
+					+ xsdPath);
 			e1.printStackTrace();
 		}
 
-		validator = schema.newValidator();
 	}
 
 	public static boolean isInitialized() {

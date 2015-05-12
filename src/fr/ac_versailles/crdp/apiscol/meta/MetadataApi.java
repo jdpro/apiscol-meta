@@ -94,7 +94,7 @@ public class MetadataApi extends ApiscolApi {
 			ResourceDirectoryInterface.initialize(
 					getProperty(ParametersKeys.fileRepoPath, context),
 					getProperty(ParametersKeys.systemDefaultLanguage, context),
-					context.getRealPath("scolomfr-xsd-1-1bis/scolomfr.xsd"),
+					"scolomfr-xsd-1-1bis/scolomfr.xsd",
 					getProperty(ParametersKeys.temporaryFilesPrefix, context));
 	}
 
