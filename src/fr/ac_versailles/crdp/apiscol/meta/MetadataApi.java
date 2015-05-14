@@ -292,8 +292,7 @@ public class MetadataApi extends ApiscolApi {
 					.getResourceDataHandler(DBTypes.mongoDB);
 			return Response
 					.ok()
-					.entity(rb.getMetadataRepresentation(
-							context.getRealPath(""), uriInfo,
+					.entity(rb.getMetadataRepresentation(uriInfo,
 							apiscolInstanceName, metadataId, true,
 							Collections.<String, String> emptyMap(),
 							resourceDataHandler, editUri))
@@ -382,8 +381,7 @@ public class MetadataApi extends ApiscolApi {
 							.getResourceDataHandler(DBTypes.mongoDB);
 					response = Response
 							.ok()
-							.entity(rb.getMetadataRepresentation(
-									context.getRealPath(""), uriInfo,
+							.entity(rb.getMetadataRepresentation(uriInfo,
 									apiscolInstanceName, metadataId, true,
 									Collections.<String, String> emptyMap(),
 									resourceDataHandler, editUri))
@@ -573,8 +571,7 @@ public class MetadataApi extends ApiscolApi {
 							.getResourceDataHandler(DBTypes.mongoDB);
 					response = Response
 							.ok()
-							.entity(rb.getMetadataRepresentation(
-									context.getRealPath(""), uriInfo,
+							.entity(rb.getMetadataRepresentation(uriInfo,
 									apiscolInstanceName, metadataId, true,
 									Collections.<String, String> emptyMap(),
 									resourceDataHandler, editUri))
@@ -984,11 +981,10 @@ public class MetadataApi extends ApiscolApi {
 			}
 		}
 		return Response
-				.ok(rb.selectMetadataFollowingCriterium(
-						context.getRealPath(""), uriInfo, apiscolInstanceName,
-						apiscolInstanceLabel, handler, start, rows,
-						includeDescription, resourceDataHandler, editUri,
-						version), rb.getMediaType())
+				.ok(rb.selectMetadataFollowingCriterium(uriInfo,
+						apiscolInstanceName, apiscolInstanceLabel, handler,
+						start, rows, includeDescription, resourceDataHandler,
+						editUri, version), rb.getMediaType())
 				.header("Access-Control-Allow-Origin", "*").build();
 
 	}
@@ -1013,10 +1009,10 @@ public class MetadataApi extends ApiscolApi {
 			}
 		}
 		return Response.ok(
-				rb.selectMetadataFollowingCriterium(context.getRealPath(""),
-						uriInfo, apiscolInstanceName, apiscolInstanceLabel,
-						handler, 0, 1, includeDescription, resourceDataHandler,
-						editUri, version), rb.getMediaType()).build();
+				rb.selectMetadataFollowingCriterium(uriInfo,
+						apiscolInstanceName, apiscolInstanceLabel, handler, 0,
+						1, includeDescription, resourceDataHandler, editUri,
+						version), rb.getMediaType()).build();
 	}
 
 	public enum GetModalities {
@@ -1065,9 +1061,9 @@ public class MetadataApi extends ApiscolApi {
 			params.put("device", device);
 		IResourceDataHandler resourceDataHandler = DBAccessFactory
 				.getResourceDataHandler(DBTypes.mongoDB);
-		Object response = rb.getMetadataRepresentation(context.getRealPath(""),
-				uriInfo, apiscolInstanceName, metadataId, includeDescription,
-				params, resourceDataHandler, editUri);
+		Object response = rb.getMetadataRepresentation(uriInfo,
+				apiscolInstanceName, metadataId, includeDescription, params,
+				resourceDataHandler, editUri);
 
 		String mediaType = rb.getMediaType().toString();
 		return Response
@@ -1116,9 +1112,8 @@ public class MetadataApi extends ApiscolApi {
 		String requestedFormat = guessRequestedFormat(request, format);
 		IEntitiesRepresentationBuilder<?> rb = EntitiesRepresentationBuilderFactory
 				.getRepresentationBuilder(requestedFormat, context);
-		Object response = rb.getMetadataSnippetRepresentation(
-				context.getRealPath(""), uriInfo, apiscolInstanceName,
-				metadataId, version);
+		Object response = rb.getMetadataSnippetRepresentation(uriInfo,
+				apiscolInstanceName, metadataId, version);
 
 		String mediaType = rb.getMediaType().toString();
 		return Response
@@ -1152,8 +1147,7 @@ public class MetadataApi extends ApiscolApi {
 					.getResultHandler();
 			handler.parse(result);
 			return Response.ok(
-					rb.selectMetadataFollowingCriterium(
-							context.getRealPath(""), uriInfo,
+					rb.selectMetadataFollowingCriterium(uriInfo,
 							apiscolInstanceName, apiscolInstanceLabel, handler,
 							0, 10, false, null, editUri, version),
 					rb.getMediaType()).build();
@@ -1233,8 +1227,7 @@ public class MetadataApi extends ApiscolApi {
 				if (response == null) {
 
 					response = Response.ok(rb
-							.getMetadataSuccessfulDestructionReport(
-									realPath(context), uriInfo,
+							.getMetadataSuccessfulDestructionReport(uriInfo,
 									apiscolInstanceName, metadataId,
 									warnings.toString()), rb.getMediaType());
 
@@ -1399,9 +1392,8 @@ public class MetadataApi extends ApiscolApi {
 
 				IResourceDataHandler resourceDataHandler = DBAccessFactory
 						.getResourceDataHandler(DBTypes.mongoDB);
-				Object representation = rb.getMetadataRepresentation(
-						context.getRealPath(""), uriInfo, packMetadataId,
-						packMetadataId, false,
+				Object representation = rb.getMetadataRepresentation(uriInfo,
+						packMetadataId, packMetadataId, false,
 						Collections.<String, String> emptyMap(),
 						resourceDataHandler, requestedFormat);
 				response = Response.status(Status.OK).entity(representation);

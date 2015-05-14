@@ -52,7 +52,7 @@ public class XHTMLRepresentationBuilder extends
 	}
 
 	@Override
-	public String getMetadataRepresentation(String realPath, UriInfo uriInfo,
+	public String getMetadataRepresentation(UriInfo uriInfo,
 			String apiscolInstanceName, String metadataId,
 			boolean includeDescription, Map<String, String> params,
 			IResourceDataHandler resourceDataHandler, String editUri)
@@ -83,9 +83,8 @@ public class XHTMLRepresentationBuilder extends
 	}
 
 	@Override
-	public String getMetadataSuccessfulDestructionReport(Object realPath,
-			UriInfo uriInfo, String apiscolInstanceName, String metadataId,
-			String warnings) {
+	public String getMetadataSuccessfulDestructionReport(UriInfo uriInfo,
+			String apiscolInstanceName, String metadataId, String warnings) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -110,39 +109,36 @@ public class XHTMLRepresentationBuilder extends
 	}
 
 	@Override
-	public String getMetadataSnippetRepresentation(String realPath,
-			UriInfo uriInfo, String apiscolInstanceName, String metadataId,
-			String version) {
+	public String getMetadataSnippetRepresentation(UriInfo uriInfo,
+			String apiscolInstanceName, String metadataId, String version) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public String getCompleteMetadataListRepresentation(String realPath,
-			UriInfo uriInfo, String apiscolInstanceLabel,
-			String apiscolInstanceName, int start, int rows,
-			boolean includeDescription,
+	public String getCompleteMetadataListRepresentation(UriInfo uriInfo,
+			String apiscolInstanceLabel, String apiscolInstanceName, int start,
+			int rows, boolean includeDescription,
 			IResourceDataHandler resourceDataHandler, String editUri,
 			String version) throws DBAccessException {
 		// TODO Auto-generated method stub
 		return XMLUtils.XMLToString(innerBuilder
-				.getCompleteMetadataListRepresentation(realPath, uriInfo,
+				.getCompleteMetadataListRepresentation(uriInfo,
 						apiscolInstanceName, apiscolInstanceLabel, start, rows,
 						includeDescription, resourceDataHandler, editUri,
 						version));
 	}
 
 	@Override
-	public String selectMetadataFollowingCriterium(String realPath,
-			UriInfo uriInfo, String apiscolInstanceLabel,
-			String apiscolInstanceName, ISearchEngineResultHandler handler,
-			int start, int rows, boolean includeDescription,
+	public String selectMetadataFollowingCriterium(UriInfo uriInfo,
+			String apiscolInstanceLabel, String apiscolInstanceName,
+			ISearchEngineResultHandler handler, int start, int rows,
+			boolean includeDescription,
 			IResourceDataHandler resourceDataHandler, String editUri,
 			String version) throws NumberFormatException, DBAccessException {
 		Document xmlResponse = innerBuilder.selectMetadataFollowingCriterium(
-				realPath, uriInfo, apiscolInstanceName, apiscolInstanceLabel,
-				handler, start, rows, true, resourceDataHandler, editUri,
-				version);
+				uriInfo, apiscolInstanceName, apiscolInstanceLabel, handler,
+				start, rows, true, resourceDataHandler, editUri, version);
 		InputStream xslStream = ResourcesLoader
 				.loadResource("xsl/metadataListXMLToHTMLTransformer.xsl");
 		if (xslStream == null) {
